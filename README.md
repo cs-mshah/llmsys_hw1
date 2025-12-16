@@ -24,8 +24,6 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-If you choose anaconda, run the following command:
-
 Then clone the starter codes from the git repo and install packages.
 
 ```bash
@@ -34,8 +32,8 @@ cd llmsys_f25_hw1
 # If you are using PSC, 
 # please load the CUDA module before installing packages:
 # module load cuda/12.6.0
-pip install -r requirements.txt
-pip install -Ue .
+python -m pip install -r requirements.txt
+python -m pip install -Ue .
 ```
 
 Make sure that everything is installed by running the following command:
@@ -49,8 +47,6 @@ Create a directory for compiled cuda_kernels.
 ```bash
 mkdir minitorch/cuda_kernels
 ```
-
-**Important**: Before starting this assignment, please replace this project's `minitorch/autodiff.py` with your implementation from assignment 1 (Problem 1).
 
 ## Code files layout
 
@@ -122,11 +118,11 @@ A[1][2] = Adata[1 * strides[0] + 2 * strides[1]]
    You may encounter *Fatal Error*, it means your cuda implementation is buggy. 
    You could try to debug your code by adding print statements to your cuda code to print the values of the intermediate variables.
 
-## Problem 2: Zip Operation CUDA Kernel + Integration (20 points)
+## Problem 2: Zip Operation CUDA Kernel + Integration (25 points)
 
 Implement the CUDA kernel for element-wise zip operations and integrate it with the framework. This operation applies a binary function to corresponding elements from two input tensors, producing a new tensor with the same shape. For example, applying addition `f(x,y) = x + y` to tensors `[1, 2, 3]` and `[4, 5, 6]` yields `[5, 7, 9]`. 
 
-### Part A: Implement zipKernel (15 points)
+### Part A: Implement zipKernel (20 points)
 
 The places where you need to fill in your code are highlighted with `BEGIN ASSIGN2_2` and `END ASSIGN2_2`
 
@@ -167,11 +163,11 @@ class CudaKernelOps(TensorOps):
    python -m pytest -l -v -k "cuda_two_args"    # for zip
    ```
 
-## Problem 3: Reduce Operation CUDA Kernel + Integration (20 points)
+## Problem 3: Reduce Operation CUDA Kernel + Integration (25 points)
 
 Implement the CUDA kernel for reduction operations and integrate it with the framework. This operation aggregates elements along a specified dimension of a tensor using a binary function, producing a tensor with reduced dimensionality. For example, reducing tensor `[[1, 2, 3], [4, 5, 6]]` along dimension 1 with sum yields `[6, 15]`.
 
-### Part A: Implement reduceKernel (15 points)
+### Part A: Implement reduceKernel (20 points)
 
 The places where you need to fill in your code are highlighted with `BEGIN ASSIGN2_3` and `END ASSIGN2_3`
 
@@ -187,9 +183,7 @@ __global__ void reduceKernel(scalar_t* out, ...){
 
 A simple way to parallel the reduce function is to have every reduced element in the output calculated individually in each block. The basic idea of ReduceSum is shown in Figure 1. In each block, it is important to think about how to calculate the step across the data to be reduced based on `reduce_dim` and `strides`.
 
-![Figure 1: Basic idea of reduce add function](hw1/reduce.jpg)
-
-*Figure 1: Basic idea of reduce add function.*
+<figure markdown="span"> ![image title](hw1/reduce.jpg) <figcaption>Figure 1: Basic idea of reduce add function.</figcaption> </figure>
 
 #### Hints - Optimized Reduction (Optional)
 
@@ -214,9 +208,7 @@ __global__ void reduce0(int *g_idata, int *g_odata) {
 }
 ```
 
-![Figure 2: Reduction](hw1/reduction.png)
-
-*Figure 2: Reduction<sup>1</sup>.*
+<figure markdown="span"> ![Image title](hw1/reduction.png){width="600"} <figcaption>Figure 2: Reduction<sup>1</sup>.</figcaption> </figure>
 
 ### Part B: Integrate Reduce Operation (5 points)
 
@@ -242,11 +234,11 @@ class CudaKernelOps(TensorOps):
    python -m pytest -l -v -k "cuda_reduce" # for reduce
    ```
 
-## Problem 4: Matrix Multiplication CUDA Kernel + Integration (25 points)
+## Problem 4: Matrix Multiplication CUDA Kernel + Integration (30 points)
 
 Implement the CUDA kernel for matrix multiplication and integrate it with the framework. This is one of the most important operations in deep learning and offers significant opportunities for optimization.
 
-### Part A: Implement MatrixMultiplyKernel (20 points)
+### Part A: Implement MatrixMultiplyKernel (25 points)
 
 The places where you need to fill in your code are highlighted with `BEGIN ASSIGN2_4` and `END ASSIGN2_4`
 
@@ -277,9 +269,7 @@ __global__ void mm(float A[N][N], float B[N][N], float C[N][N]) {
 }
 ```
 
-![Figure 3: Simple parallelization](hw1/simple_parallel.png)
-
-*Figure 3: Simple parallelization.*
+<figure markdown="span"> ![Image title](hw1/simple_parallel.png){width="300"} <figcaption>Figure 3: Simple parallelization.</figcaption> </figure>
 
 #### Hints - Shared Memory Tiling (Optional)
 
@@ -304,9 +294,7 @@ __global__ void mm(float A[N][N], float B[N][N], float C[N][N]) {
 }
 ```
 
-![Figure 4: Shared memory tiling](hw1/block_level_parallel.png)
-
-*Figure 4: Shared memory tiling.*
+<figure markdown="span"> ![Image title](hw1/block_level_parallel.png){width="300"} <figcaption>Figure 4: Shared memory tiling.</figcaption> </figure>
 
 ### Part B: Integrate Matrix Multiplication (5 points)
 
