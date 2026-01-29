@@ -268,7 +268,15 @@ __global__ void mapKernel(
   // 5. Calculate the position of element in out_array according to out_index and out_strides
   // 6. Apply the unary function to the input element and write the output to the out memory
 
-  assert(false && "Not Implemented");
+  int i = blockDim.x * blockIdx.x + threadIdx.x;
+  if (i < out_size)
+  {
+    to_index(i, out_shape, out_index, shape_size);
+    broadcast_index(out_index, out_shape, in_shape, in_index, shape_size, shape_size);
+    int in_pos = index_to_position(in_index, in_strides, shape_size);
+    int out_pos = index_to_position(out_index, out_strides, shape_size);
+    out[out_pos] = fn(fn_id, in_storage[in_pos]);
+  }
   /// END HW1_1
 }
 
@@ -333,8 +341,18 @@ __global__ void zipKernel(
   // 6. Broadcast the out_index to the b_index according to b_shape
   // 7.Calculate the position of element in b_array according to b_index and b_strides
   // 8. Apply the binary function to the input elements in a_array & b_array and write the output to the out memory
-
-  assert(false && "Not Implemented");
+  int i = blockDim.x * blockIdx.x + threadIdx.x;
+  if (i < out_size)
+  {
+    to_index(i, out_shape, out_index, out_shape_size);
+    int out_pos = index_to_position(out_index, out_strides, out_shape_size);
+    broadcast_index(out_index, out_shape, a_shape, a_index, a_shape_size, a_shape_size);
+    int a_pos = index_to_position(a_index, a_strides, a_shape_size);
+    broadcast_index(out_index, out_shape, b_shape, b_index, b_shape_size, b_shape_size);
+    int b_pos = index_to_position(b_index, b_strides, b_shape_size);
+    out[out_pos] = fn(fn_id, a_storage[a_pos], b_storage[b_pos]);
+  }
+  
   /// END HW1_2
 }
 
@@ -390,7 +408,31 @@ __global__ void reduceKernel(
   // 4. Iterate over the reduce_dim dimension of the input array to compute the reduced value
   // 5. Write the reduced value to out memory
 
-  assert(false && "Not Implemented");
+  int i = blockDim.x * blockIdx.x + threadIdx.x;
+  if(i < out_size)
+  {
+    to_index(i, out_shape, out_index, shape_size);
+    int out_pos = index_to_position(out_index, out_strides, shape_size);
+    float result = reduce_value;
+    for(int r = 0; r < a_shape[reduce_dim]; r++)
+    {
+      int a_index[MAX_DIMS];
+      for(int dim = 0; dim < shape_size; dim++)
+      {
+        if(dim == reduce_dim)
+        {
+          a_index[dim] = r;
+        }
+        else
+        {
+          a_index[dim] = out_index[dim];
+        }
+      }
+      int a_pos = index_to_position(a_index, a_strides, shape_size);
+      result = fn(fn_id, result, a_storage[a_pos]);
+    }
+    out[out_pos] = result;
+  }
   /// END HW1_3
 }
 
@@ -450,7 +492,54 @@ __global__ void MatrixMultiplyKernel(
   // 6. Synchronize to make sure all threads are done computing the output tile for (row, col)
   // 7. Write the output to global memory
 
-  assert(false && "Not Implemented");
+  int bx = blockIdx.x;
+  int by = blockIdx.y;
+  int tx = threadIdx.x;
+  int ty = threadIdx.y;
+  int row = bx * TILE + ty;
+  int col = by * TILE + tx;
+  int m = a_shape[1];
+  int n = a_shape[2];
+  int p = b_shape[2];
+  float out_val = 0.0f;
+  for(int phase = 0; phase < (n + TILE - 1) / TILE; phase++)
+  {
+    int a_row = row;
+    int a_col = phase * TILE + tx;
+    int a_pos = batch * a_batch_stride + a_row * a_strides[1] + a_col * a_strides[2];
+    if(a_row < m && a_col < n)
+    {
+      a_shared[ty][tx] = a_storage[a_pos];
+    }
+    else
+    {
+      a_shared[ty][tx] = 0.0f;
+    }
+
+    int b_row = phase * TILE + ty;
+    int b_col = col;
+    int b_pos = batch * b_batch_stride + b_row * b_strides[1] + b_col * b_strides[2];
+    if(b_row < n && b_col < p)
+    {
+      b_shared[ty][tx] = b_storage[b_pos];
+    }
+    else
+    {
+      b_shared[ty][tx] = 0.0f;
+    }
+    __syncthreads();
+
+    for(int k = 0; k < TILE; k++)
+    {
+      out_val += a_shared[ty][k] * b_shared[k][tx];
+    }
+    __syncthreads();
+  }
+  if(row < m && col < p)
+  {
+    int out_pos = batch * out_strides[0] + row * out_strides[1] + col * out_strides[2];
+    out[out_pos] = out_val;
+  }
   /// END HW1_4
 }
 

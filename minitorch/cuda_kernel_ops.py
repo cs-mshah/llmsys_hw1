@@ -124,8 +124,24 @@ class CudaKernelOps(TensorOps):
             # BEGIN HW1_2
             # TODO
             # 1. Call the tensorZip function implemented in CUDA
-
-            raise NotImplementedError("Zip Function Not Implemented Yet")
+            lib.tensorZip(
+                out._tensor._storage,
+                out._tensor._shape.astype(np.int32),
+                out._tensor._strides.astype(np.int32),
+                out.size,
+                len(out.shape),
+                a._tensor._storage,
+                a._tensor._shape.astype(np.int32),
+                a._tensor._strides.astype(np.int32),
+                a.size,
+                len(a.shape),
+                b._tensor._storage,
+                b._tensor._shape.astype(np.int32),
+                b._tensor._strides.astype(np.int32),
+                b.size,
+                len(b.shape),
+                fn_id
+            )
             # END HW1_2
             
             return out
@@ -153,7 +169,7 @@ class CudaKernelOps(TensorOps):
                 np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),    # in_shape
                 np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),    # in_strides
                 ctypes.c_int,                                                            # reduce_dim
-                ctypes.c_double,                                                         # reduce_value
+                ctypes.c_float,                                                         # reduce_value
                 ctypes.c_int,                                                            # shape_len
                 ctypes.c_int,                                                            # fn_id
             ]
@@ -164,8 +180,19 @@ class CudaKernelOps(TensorOps):
             # BEGIN HW1_3
             # TODO
             # 1. Call the tensorReduce function implemented in CUDA
-            
-            raise NotImplementedError("Reduce Function Not Implemented Yet")
+            lib.tensorReduce(
+                out._tensor._storage,
+                out._tensor._shape.astype(np.int32),
+                out._tensor._strides.astype(np.int32),
+                out.size,
+                a._tensor._storage,
+                a._tensor._shape.astype(np.int32),
+                a._tensor._strides.astype(np.int32),
+                dim,
+                reduce_value,
+                len(a.shape),
+                fn_id
+            )
             # END HW1_3
             
             return out
@@ -233,7 +260,20 @@ class CudaKernelOps(TensorOps):
         # TODO
         # 1. Call the Matmul function implemented in CUDA
 
-        raise NotImplementedError("Matrix Multiply Function Not Implemented Yet")
+        lib.MatrixMultiply(
+            out._tensor._storage,
+            out._tensor._shape.astype(np.int32),
+            out._tensor._strides.astype(np.int32),
+            a._tensor._storage,
+            a._tensor._shape.astype(np.int32),
+            a._tensor._strides.astype(np.int32),
+            b._tensor._storage,
+            b._tensor._shape.astype(np.int32),
+            b._tensor._strides.astype(np.int32),
+            out.shape[0],
+            out.shape[1],
+            out.shape[2]
+        )
         # END HW1_4
         
         # Undo 3d if we added it.
@@ -242,3 +282,4 @@ class CudaKernelOps(TensorOps):
         if more_3d:
             out = out.view(*ls)
         return out
+    
